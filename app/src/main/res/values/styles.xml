@@ -1,0 +1,39 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        Base application theme, dependent on API level. This theme is replaced
+        by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+    -->
+    <style name="AppBaseTheme" parent="android:Theme.Light">
+        <!--
+            Theme customizations available in newer API levels can go in
+            res/values-vXX/styles.xml, while customizations related to
+            backward-compatibility can go here.
+        -->
+    </style>
+
+    <!-- Application theme. -->
+    <style name="AppTheme" parent="AppBaseTheme">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+    </style>
+    
+    <style name="EditTextTheme" parent="@android:style/Widget.DeviceDefault.Light.Spinner" />
+        
+    <style name="childPadding">
+        <item name="android:padding">2px</item>
+    </style>
+    
+    <style name="listViewPadding">
+        <item name="android:padding">10px</item>
+    </style>
+    
+    <style name="imageButtonStyle">
+        <item name="android:layout_width">60dp</item>
+        <item name="android:layout_height">60dp</item>
+        <item name="android:background">#00000000</item>
+        <item name="android:src">@drawable/clock_icon</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:onClick">onClick</item>
+    </style>
+
+</resources>

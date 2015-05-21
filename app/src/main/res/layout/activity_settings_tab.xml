@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    style="@style/childPadding" >
+
+	 		 <LinearLayout
+			        android:orientation="horizontal"
+			        android:layout_width="match_parent"
+			        android:layout_height="wrap_content">
+			        
+	               <TextView
+			            android:id="@+id/tvEnterSpreadSheetName"
+			            android:layout_width="wrap_content"
+			            android:layout_height="wrap_content"
+			            android:text="Spreadsheet Name:" />
+
+	               <EditText
+	                   android:id="@+id/etSpreadSheetName"
+	                   android:layout_width="0dip"
+	                   android:layout_height="wrap_content"
+	                   android:layout_weight="1"
+	                   android:inputType="text"
+	                   android:ems="10" />
+
+	         </LinearLayout>
+         
+	         <LinearLayout
+			        android:orientation="horizontal"
+			        android:layout_width="match_parent"
+			        android:layout_height="wrap_content"
+					style="@style/childPadding">
+	               
+	               	<TextView
+	                   android:id="@+id/tvEnterWorkSheetName"
+	                   android:layout_width="wrap_content"
+	                   android:layout_height="wrap_content"
+	                   android:text="Worksheet Name:" />
+
+	               	<EditText
+	               	    android:id="@+id/etWorkSheetName"
+	               	    android:layout_width="0dip"
+	               	    android:layout_height="wrap_content"
+	               	    android:layout_weight="1"
+	               	    android:inputType="text"
+	               	    android:ems="10" />
+
+	       	</LinearLayout>
+
+    <ExpandableListView
+        android:id="@+id/expandableListView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </ExpandableListView>
+
+</LinearLayout>

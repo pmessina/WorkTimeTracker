@@ -1,0 +1,29 @@
+#
+# generated on 2014/03/10 01:50:37
+#
+# --table-start--
+dataClass=com.worktime.databasemanager.Workday
+tableName=Workday
+# --table-fields-start--
+# --field-start--
+fieldName=id
+generatedId=true
+# --field-end--
+# --field-start--
+fieldName=dateToday
+# --field-end--
+# --field-start--
+fieldName=timeIn
+# --field-end--
+# --field-start--
+fieldName=breakIn
+# --field-end--
+# --field-start--
+fieldName=breakOut
+# --field-end--
+# --field-start--
+fieldName=timeOut
+# --field-end--
+# --table-fields-end--
+# --table-end--
+#################################
