@@ -12,7 +12,7 @@ public class PreferencesManager extends PreferenceFragment
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        this.addPreferencesFromResource(R.xml.spreadsheetprefs);
+        this.addPreferencesFromResource (R.xml.spreadsheetprefs);
     }
 
 }

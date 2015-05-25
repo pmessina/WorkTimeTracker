@@ -25,7 +25,6 @@
                 android:layout_height="match_parent" >
                	<include android:id="@+id/settings_tab" layout="@layout/activity_settings_tab"/>
  				<include android:id="@+id/worktime_tab" layout="@layout/activity_worktime_tab" />
-				
             </FrameLayout>
         </LinearLayout>
    

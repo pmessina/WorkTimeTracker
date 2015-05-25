@@ -95,6 +95,7 @@
     <orderEntry type="library" exported="" name="gss_lib_2.2.b1" level="project" />
     <orderEntry type="module" module-name="ormlite-android-4.49-SNAPSHOT" exported="" />
     <orderEntry type="module" module-name="ormlite-core-4.49-SNAPSHOT" exported="" />
+    <orderEntry type="module" module-name="jxl" exported="" />
     <orderEntry type="module" module-name="gss_lib_2.2.b1" exported="" />
   </component>
 </module>

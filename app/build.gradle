@@ -28,4 +28,5 @@ dependencies {
     compile project(':ormlite-core-4.49-SNAPSHOT')
     compile 'joda-time:joda-time:2.3'
     compile project(':gss_lib_2.2.b1')
+    compile project(':jxl')
 }
