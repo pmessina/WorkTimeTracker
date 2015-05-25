@@ -13,13 +13,15 @@ import com.worktimetracker.R;
 import java.util.HashMap;
 import java.util.List;
 
+import jxl.write.WritableSheet;
+
 public class ExpandableListAdapter extends BaseExpandableListAdapter 
 {
 	private Context context;
 	private List<String> listDataHeader;
-	private HashMap<String, List<String>> listDataChild;
+	private HashMap<String, List<WritableSheet>> listDataChild;
 	
-	public ExpandableListAdapter(Context context, List<String> listDataHeader, HashMap<String, List<String>> listDataChild) 
+	public ExpandableListAdapter(Context context, List<String> listDataHeader, HashMap<String, List<WritableSheet>> listDataChild)
 	{
         this.context = context;
         this.listDataHeader = listDataHeader;
@@ -30,7 +32,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 	public Object getChild(int groupPosition, int childPosition) 
 	{
 		String ldh = listDataHeader.get(groupPosition);
-		List<String> ldc = listDataChild.get(ldh);
+		List<WritableSheet> ldc = listDataChild.get(ldh);
 		
 		return ldc.get(childPosition);
 	}
@@ -44,7 +46,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 	@Override
 	public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) 
 	{
-		String childText = (String)getChild(groupPosition, childPosition);
+		WritableSheet childText = (WritableSheet)getChild(groupPosition, childPosition);
 		
 		if (convertView == null)
 		{
@@ -53,7 +55,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 		}
 		
 		TextView textListChild = (TextView)convertView.findViewById(R.id.tvListItem);
-		textListChild.setText(childText);
+		textListChild.setText(childText.getName());
 			
 		return convertView;
 	}
@@ -62,7 +64,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 	public int getChildrenCount(int groupPosition) 
 	{
 		String ldh = listDataHeader.get(groupPosition);
-		List<String> ldc = listDataChild.get(ldh);
+		List<WritableSheet> ldc = listDataChild.get(ldh);
 		
 		return ldc.size();
 	}
