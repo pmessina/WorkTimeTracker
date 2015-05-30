@@ -1,7 +1,5 @@
 package com.worktimetracker.databasemanager;
 
-import java.sql.SQLException;
-
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
@@ -11,6 +9,11 @@ import com.j256.ormlite.dao.RuntimeExceptionDao;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 
+import java.sql.SQLException;
+
+/*
+Utility class for managing the Workday table in the SQLite Database
+ */
 
 public class DatabaseManager extends OrmLiteSqliteOpenHelper
 {
@@ -38,8 +41,6 @@ public class DatabaseManager extends OrmLiteSqliteOpenHelper
 		{
 			e.printStackTrace();
 		} 
-
-		
 
 	}
 

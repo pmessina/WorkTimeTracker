@@ -7,6 +7,9 @@ import android.os.Handler;
 
 import com.worktimetracker.R;
 
+/**
+ * Show a Menu Screen before WorkTime Activity starts
+ */
 public class SplashScreenActivity extends Activity {
 
     @Override
@@ -20,7 +23,6 @@ public class SplashScreenActivity extends Activity {
             public void run() {
                 Intent intent = new Intent(SplashScreenActivity.this, WorkTimeActivity.class);
                 startActivity(intent);
-
                 finish();
             }
 

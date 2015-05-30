@@ -4,8 +4,8 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -21,12 +21,10 @@ import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 
 import com.j256.ormlite.android.apptools.OrmLiteBaseActivity;
-import com.pras.SpreadSheet;
-import com.pras.WorkSheet;
 import com.worktimetracker.R;
 import com.worktimetracker.databasemanager.DatabaseManager;
 import com.worktimetracker.spreadsheetmanager.ExcelSpreadSheetManager;
-import com.worktimetracker.spreadsheetmanager.TimeSetListener;
+import com.worktimetracker.spreadsheetmanager.TPTVWidgetManager;
 
 import org.joda.time.DateTime;
 import org.joda.time.Period;
@@ -38,16 +36,18 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
+import jxl.Workbook;
+import jxl.read.biff.BiffException;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
 
 public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> implements OnClickListener
 {
-	SharedPreferences pref;
+	private SharedPreferences pref;
 
-    Editor editor;	
+    private SharedPreferences.Editor editor;
 
 	private TextView tvTimeIn, tvBreakIn, tvBreakOut, tvTimeOut;
 
@@ -55,19 +55,21 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
 
 	private Button btnAddSpreadSheet;
 	
-	EditText etSpreadSheetName, etWorkSheetName;
+	private EditText etSpreadSheetName, etWorkSheetName;
 
-	ExpandableListView expListView;
+	private ExpandableListView expListView;
 
-    DateTimeFormatter fmtDate, fmtTime;
+    private DateTimeFormatter fmtDate, fmtTime;
 
-    DateTime dtToday, dtTimeIn, dtBreakIn, dtBreakOut, dtTimeOut;
+    private DateTime dtToday, dtTimeIn, dtBreakIn, dtBreakOut, dtTimeOut;
 
     private boolean isSpreadSheetAddSuccessful = false;
 
-    String[] columns = new String[]{ "Date", "Time In", "Break In", "Break Out", "Time Out", "Hours"};
+    private String[] workbookColumnHeaders = new String[]{ "Date", "Time In", "Break In", "Break Out", "Time Out", "Hours"};
 
-    String directoryName;
+    private String directoryName;
+
+    private TPTVWidgetManager listener;
 
     @SuppressLint("NewApi") 
     @Override
@@ -76,7 +78,6 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tabcontainer);
 
-        //Initialization of UI Widgets
         tvTimeIn = (TextView)findViewById(R.id.tvTimeIn);
         tvBreakIn  = (TextView)findViewById(R.id.tvBreakIn);
         tvBreakOut  = (TextView)findViewById(R.id.tvBreakOut);
@@ -92,67 +93,18 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
         fmtDate = DateTimeFormat.shortDate();
         fmtTime = DateTimeFormat.shortTime();
 
-        ExcelSpreadSheetManager spreadSheetManager = new ExcelSpreadSheetManager();
+        listener = new TPTVWidgetManager(this, tvTimeIn, tvBreakIn, tvBreakOut, tvTimeOut, btnSelTimeIn, btnSelBreakIn, btnSelBreakOut, btnSelTimeOut, btnAddSpreadSheet);
 
-        ArrayList<String> listDataHeader = new ArrayList<String>();
-        HashMap<String, List<WritableSheet>> listDataChild = new HashMap<>();
+        directoryName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/WorkTimeSpreadsheets/";
 
-        directoryName = spreadSheetManager.getWorkbookDirectory() + "/WorkTimeSpreadsheets/";
+        ExcelSpreadSheetManager spreadSheetManager = new ExcelSpreadSheetManager(directoryName);
 
-        //In the future, change directory name in preference activity
-        File directory = new File(directoryName);
-        if (!directory.exists())
-        {
-            directory.mkdir();
-        }
+        //In the future, allow user to change directory name in settings
+        ArrayList<String> retrievedFiles = spreadSheetManager.getFilesFromDirectory(directoryName);
 
-        ArrayList<File> workBooks = new ArrayList<File>();
-        File[] filesInDir = directory.listFiles();
-        if (filesInDir.length != 0)
-        {
-            for (File file : filesInDir)
-            {
-                workBooks.add(file);
-                listDataHeader.add(file.getName());
+        HashMap<String, ArrayList<String>> retrievedSheets = spreadSheetManager.fetchSheetsFromDirectory(retrievedFiles);
 
-                ArrayList<WritableSheet> writableSheets = new ArrayList<>();
-                try
-                {
-                    WritableWorkbook wkbk = spreadSheetManager.createOrGetWorkBook(directoryName, file.getName());
-                    if (wkbk.getSheets().length == 0)
-                    {
-                        //Set sheet name
-                        spreadSheetManager.createWorkSheet(wkbk, "TimeSheet");
-                    }
-
-                    for (WritableSheet sheet : wkbk.getSheets())
-                    {
-                        writableSheets.add(sheet);
-                    }
-                    listDataChild.put(file.getName(), writableSheets);
-                }
-                catch (Exception ex)
-                {
-                    ex.printStackTrace();
-                }
-            }
-        }
-        else
-        {
-//            try
-//            {
-//                WritableWorkbook wkbk = spreadSheetManager.createOrGetWorkBook(directoryName, "TimeSpreadSheet");
-//                spreadSheetManager.createWorkSheet(wkbk, "TimeWorkSheet");
-//                spreadSheetManager.writeCloseWorkBook(wkbk);
-//            }
-//            catch (IOException | BiffException | WriteException e)
-//            {
-//                e.printStackTrace();
-//            }
-
-        }
-
-        final ExpandableListAdapter listAdapter = new ExpandableListAdapter(this, listDataHeader, listDataChild);
+        final ExpandableListAdapter listAdapter = new ExpandableListAdapter(this, retrievedFiles, retrievedSheets);
         expListView.setAdapter(listAdapter);
 
         expListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener()
@@ -161,8 +113,8 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
             public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id)
             {
                 String spreadsheetName = listAdapter.getGroup(groupPosition).toString();
-                WritableSheet sheet = (WritableSheet)listAdapter.getChild(groupPosition, childPosition);
-                String worksheetName = sheet.getName();
+                String worksheetName = (String)listAdapter.getChild(groupPosition, childPosition);
+                //String worksheetName = sheet.getName();
 
                 etSpreadSheetName.setText(spreadsheetName);
                 etSpreadSheetName.setSelection(etSpreadSheetName.length());
@@ -170,7 +122,7 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
                 etWorkSheetName.setText(worksheetName);
                 etWorkSheetName.setSelection(etWorkSheetName.length());
 
-                return false;
+                return true;
             }
         });
 
@@ -193,37 +145,7 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
 		pref = PreferenceManager.getDefaultSharedPreferences(this);
 		editor = pref.edit();
 
-//     	dtToday = storedPrefToDateTime(null, spreadSheetColumns[0]);
-//
-//     	dtTimeIn = storedPrefToDateTime(tvTimeIn, spreadSheetColumns[1]);
-//     	if (dtTimeIn != null)
-//     	{
-//     		setTimeInState();
-//     		btnAddSpreadSheet.setEnabled(false);
-//     	}
-//
-//        dtBreakIn = storedPrefToDateTime(tvBreakIn, spreadSheetColumns[2]);
-//        if (dtBreakIn != null)
-//        {
-//        	setBreakInState();
-//        	btnAddSpreadSheet.setEnabled(false);
-//        }
-//
-//        dtBreakOut = storedPrefToDateTime(tvBreakOut, spreadSheetColumns[3]);
-//        if (dtBreakOut != null)
-//        {
-//        	setBreakOutState();
-//        	btnAddSpreadSheet.setEnabled(false);
-//        }
-//
-//        dtTimeOut = storedPrefToDateTime(tvTimeOut, spreadSheetColumns[4]);
-//        if (dtTimeOut != null)
-//        {
-//        	setTimeOutState();
-//        	btnAddSpreadSheet.setEnabled(true);
-//        }
-
-
+        //Set up Tabs for Clock In Screen and Settings
         TabHost host = (TabHost)this.findViewById(R.id.tabhost);
         host.setup();
 
@@ -238,28 +160,23 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
         host.addTab(workTimeTab);
         host.addTab(settingsTab);
 
-		storedPrefToSpreadWorkSheet(etSpreadSheetName, "SpreadSheetName");
-		storedPrefToSpreadWorkSheet(etWorkSheetName, "WorkSheetName");
+        btnAddSpreadSheet.setEnabled(false);
+
     }
 
-    public boolean addSpreadSheetHeader(ExcelSpreadSheetManager esm)
+    public boolean addSpreadSheetHeader(ExcelSpreadSheetManager esm, WritableWorkbook ww, WritableSheet ws)
     {
         try
         {
-            WritableWorkbook ww = esm.createOrGetWorkBook(esm.getDirectoryName(), esm.getSpreadSheetName());
-            WritableSheet ws = esm.createWorkSheet(ww, esm.getWorkSheetName());
-
             //Populate Header on first row
-            for(int i = 0; i < columns.length; i++)
+            for(int i = 0; i < workbookColumnHeaders.length; i++)
             {
-                esm.addLabelWithCells(ws, i, 0, columns[i]);
+                esm.addLabelWithCells(ws, i, 0, workbookColumnHeaders[i]);
             }
-
-            esm.writeCloseWorkBook(ww);
 
             isSpreadSheetAddSuccessful = true;
         }
-        catch (IOException | jxl.write.WriteException | jxl.read.biff.BiffException e)
+        catch (WriteException e)//| jxl.read.biff.BiffException e)
         {   //Creation or writing of workbook fails
             isSpreadSheetAddSuccessful = false;
             e.printStackTrace();
@@ -268,28 +185,28 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
         return isSpreadSheetAddSuccessful;
     }
 
-    public boolean addSpreadSheetData(ExcelSpreadSheetManager esm, DateTime dtTimeIn, DateTime dtTimeOut, DateTime dtBreakIn, DateTime dtBreakOut)
+    public boolean addSpreadSheetData(ExcelSpreadSheetManager esm, WritableWorkbook ww, WritableSheet ws, DateTime today, DateTime dtTimeIn, DateTime dtTimeOut, DateTime dtBreakIn, DateTime dtBreakOut)
     {
         try
         {
-            WritableWorkbook ww = esm.createOrGetWorkBook(esm.getDirectoryName(), esm.getSpreadSheetName());
-            WritableSheet ws = esm.createWorkSheet(ww, esm.getWorkSheetName());
+            int rows = ws.getRows();
 
-            //Populate Header on first row
-            for(int i = 0; i < columns.length; i++)
-            {
-                esm.addLabelWithCells(ws, i, 0, columns[i]);
-            }
+            String dateTimeFormat = "hh:mm:ss";
+            String dateFormat = "mm/dd/yyyy";
 
-            esm.addDateWithCells(ws, 0, 0, dtTimeIn.toDate());
-            esm.addDateWithCells(ws, 1, 0, dtBreakIn.toDate());
-            esm.addDateWithCells(ws, 2, 0, dtBreakOut.toDate());
-            esm.addDateWithCells(ws, 3, 0, dtTimeOut.toDate());
-            esm.writeCloseWorkBook(ww);
+            esm.addDateTimeWithCells(ws, 0, rows, today.toDate(), dateFormat);
+            esm.addDateTimeWithCells(ws, 1, rows, dtTimeIn.toDate(), dateTimeFormat);
+            esm.addDateTimeWithCells(ws, 2, rows, dtBreakIn.toDate(), dateTimeFormat);
+            esm.addDateTimeWithCells(ws, 3, rows, dtBreakOut.toDate(), dateTimeFormat);
+            esm.addDateTimeWithCells(ws, 4, rows, dtTimeOut.toDate(), dateTimeFormat);
+
+            double totalTime = this.calculateWorkHours(dtTimeIn, dtBreakIn, dtBreakOut, dtTimeOut);
+
+            esm.addNumberWithCells(ws, 5, rows, totalTime);
 
             isSpreadSheetAddSuccessful = true;
         }
-        catch (IOException | jxl.write.WriteException | jxl.read.biff.BiffException e)
+        catch (WriteException e)
         {   //Creation or writing of workbook fails
             isSpreadSheetAddSuccessful = false;
             e.printStackTrace();
@@ -298,33 +215,6 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
     	return isSpreadSheetAddSuccessful;
     }
 
-    public void addTimeRecord(SpreadSheet spreadsheet, WorkSheet worksheet, DateTime dtTimeIn, DateTime dtBreakIn, DateTime dtBreakOut, DateTime dtTimeOut)
-    {
-//		HashMap<String, String> rec = new HashMap<String, String>();
-//
-//		rec.put(spreadSheetColumns[0], fmtDate.print(dtToday));
-//		rec.put(spreadSheetColumns[1], fmtTime.print(dtTimeIn));
-//		rec.put(spreadSheetColumns[2], fmtTime.print(dtBreakIn));
-//		rec.put(spreadSheetColumns[3], fmtTime.print(dtBreakOut));
-//		rec.put(spreadSheetColumns[4], fmtTime.print(dtTimeOut));
-//		rec.put(spreadSheetColumns[5], Double.toString(calculateWorkHours(dtTimeIn, dtBreakIn, dtBreakOut, dtTimeOut)));
-//
-//		WorkSheet ws = spreadsheet.getWorkSheet(worksheet.getTitle(), true).get(0);
-//
-//		WorkSheetRow row = ws.addListRow(rec);
-//        ws.getRecords().get(0).setData(rec);
-//        ArrayList<WorkSheetCell> workSheetCellArrayList = new ArrayList<>();
-//        WorkSheetCell workSheetCell = new WorkSheetCell();
-//        workSheetCell.setName("Column 1");
-//        workSheetCell.setValue("Column 1");
-//        workSheetCell.setRow(1);
-//        workSheetCell.setCol(1);
-//        workSheetCellArrayList.add(workSheetCell);
-//        row.setCells(workSheetCellArrayList);
-
-		//worksheet.addRecord(spreadsheet.getKey(), rec);
-    }	
-    
     public double calculateWorkHours(DateTime dtTimeIn, DateTime dtBreakIn, DateTime dtBreakOut, DateTime dtTimeOut)
     {
     	Period perWorkTime = new Period(dtTimeIn, dtTimeOut, PeriodType.time());
@@ -379,8 +269,6 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
 	@Override
 	public void onClick(View v) 
 	{
-        TimeSetListener listener = new TimeSetListener(this, tvTimeIn, tvBreakIn, tvBreakOut, tvTimeOut, btnSelTimeIn, btnSelBreakIn, btnSelBreakOut, btnSelTimeOut);
-
 		dtToday = DateTime.now().toLocalDate().toDateTimeAtStartOfDay();
 		
 		switch(v.getId())
@@ -408,7 +296,10 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
 				break;
 			case R.id.btnAddSpreadSheet:
 
-                if (etSpreadSheetName.getText().toString().isEmpty() || etWorkSheetName.getText().toString().isEmpty())
+                String workSheetName = etWorkSheetName.getText().toString().trim();
+                String spreadSheetName = etSpreadSheetName.getText().toString().trim();
+
+                if (spreadSheetName.isEmpty() || workSheetName.isEmpty())
                 {
                     AlertDialog dialog = new AlertDialog.Builder(WorkTimeActivity.this).create();
                     dialog.setTitle("Missing Information");
@@ -427,14 +318,39 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
                 }
                 else
                 {
-                    String workSheetName = etWorkSheetName.getText().toString();
-                    String spreadSheetName = etSpreadSheetName.getText().toString();
-
                     ExcelSpreadSheetManager esm = new ExcelSpreadSheetManager(directoryName, spreadSheetName, workSheetName);
 
-                    addSpreadSheetData(esm, dtTimeIn, dtTimeOut, dtBreakIn, dtBreakOut);
+                    try
+                    {
+                        File spreadSheetFile = new File(directoryName, spreadSheetName);
+
+                        WritableWorkbook writableWorkbook;
+                        WritableSheet writableSheet;
+
+                        if (spreadSheetFile.exists())
+                        {
+                            Workbook wkbk = esm.getWorkbook(spreadSheetFile);
+                            //Convert existing workbook to writable workbook to prepare for writing
+                            writableWorkbook = esm.createWorkbook(spreadSheetFile, wkbk);
+                            writableSheet = esm.createWorkSheet(writableWorkbook, wkbk.getSheet(0));
+                        }
+                        else
+                        {
+                            spreadSheetFile = new File(directoryName, spreadSheetName + ".xls");
+                            writableWorkbook = esm.createWorkbook(spreadSheetFile);
+                            writableSheet = esm.createWorkSheet(writableWorkbook, workSheetName);
+                            addSpreadSheetHeader(esm, writableWorkbook, writableSheet);
+                        }
+
+                        addSpreadSheetData(esm, writableWorkbook, writableSheet, dtToday, dtTimeIn, dtTimeOut, dtBreakIn, dtBreakOut);
+                        esm.writeCloseWorkBook(writableWorkbook);
+
+                    }
+                    catch (IOException | WriteException | BiffException e)
+                    {
+                        e.printStackTrace();
+                    }
                 }
-				
 				break;
 			case R.id.btnSelTimeIn:
 				listener.showTimeInDialog();
@@ -458,57 +374,12 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
 		editor.putString(key, tv.getText().toString());
 		editor.commit();
 	}
-	
-	public String storedPrefToSpreadWorkSheet(TextView tv, String key)
-	{
-		String str = pref.getString(key, "");
-		
-		tv.setText(str);
-		
-		return str;
-	}
-	
-	public DateTime storedPrefToDateTime(TextView tv, String column)
-	{	
-		String str = pref.getString(column, "");
 
-		DateTime dt = null;
-		
-		if (!str.equals(""))
-		{
-			dt = DateTime.parse(str);
-		 
-			if (tv != null)
-			{
-				tv.setText(fmtTime.print(dt));
-			}
-		}
-		
-		return dt;
-	}
-	
-
-    
 	@Override
 	protected void onPause() 
 	{
 		super.onPause();
-		
-//		if (dtToday != null)
-//			dateTimeToStoredPref(spreadSheetColumns[0], dtToday);
-//
-//		if (dtTimeIn != null)
-//			dateTimeToStoredPref(spreadSheetColumns[1], dtTimeIn);
-//
-//		if (dtBreakIn != null)
-//			dateTimeToStoredPref(spreadSheetColumns[2], dtBreakIn);
-//
-//		if (dtBreakOut != null)
-//			dateTimeToStoredPref(spreadSheetColumns[3], dtBreakOut);
-//
-//		if (dtTimeOut != null)
-//			dateTimeToStoredPref(spreadSheetColumns[4], dtTimeOut);
-		
+
 		spreadWorkSheetToStoredPref(etSpreadSheetName, "SpreadSheetName");
 		spreadWorkSheetToStoredPref(etWorkSheetName, "WorkSheetName");
 	}

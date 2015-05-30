@@ -1,30 +1,33 @@
 package com.worktimetracker.spreadsheetmanager;
 
-import android.os.Environment;
-
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.biff.DisplayFormat;
+import jxl.format.Alignment;
+import jxl.read.biff.BiffException;
 import jxl.write.DateFormat;
 import jxl.write.DateTime;
 import jxl.write.Label;
 import jxl.write.Number;
+import jxl.write.NumberFormats;
 import jxl.write.WritableCellFormat;
+import jxl.write.WritableFont;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 
 /**
- * Created by Admin on 5/23/2015.
+ * API for managing the jexcel library by creating/getting workbooks and worksheets,
+ * adding header, and time records
  */
 public class ExcelSpreadSheetManager
 {
-    private static String envPath = Environment.getExternalStorageDirectory().getAbsolutePath();
-
     private String directoryName, spreadSheetName, workSheetName;
 
     public ExcelSpreadSheetManager(String directoryName, String spreadSheetName, String workSheetName)
@@ -34,75 +37,78 @@ public class ExcelSpreadSheetManager
         this.workSheetName = workSheetName;
     }
 
-    public ExcelSpreadSheetManager()
+    public ExcelSpreadSheetManager(String directoryName)
     {
-
+        this.directoryName = directoryName;
     }
 
-    public String getDirectoryName()
+    public HashMap<String, ArrayList<String>> fetchSheetsFromDirectory(ArrayList<String> workBooksInDirectory)
     {
-        return directoryName;
-    }
+        HashMap<String, ArrayList<String>> sheets = new HashMap<>();
 
-    public String getSpreadSheetName()
-    {
-        return spreadSheetName;
-    }
-
-    public String getWorkSheetName()
-    {
-        return workSheetName;
-    }
-
-    public String getWorkbookDirectory()
-    {
-        return envPath;
-    }
-
-    public WritableWorkbook createOrGetWorkBook(String directoryName, String spreadSheetName) throws IOException, jxl.read.biff.BiffException
-    {
-        boolean isSdCardWritable = this.isExternalStorageWritable();
-
-        File file = new File(directoryName + "/" + spreadSheetName);
-
-        WritableWorkbook writableWorkbook = Workbook.createWorkbook(file);
-
-        //If workbook exists, fetch it and get it ready for writing
-//        if (file.exists())
-//        {
-//            Workbook workbook = Workbook.getWorkbook(file);
-//
-//            writableWorkbook = Workbook.createWorkbook(file);
-//        }
-//
-//        else
-//        {
-//            writableWorkbook = Workbook.createWorkbook(file);
-//        }
-
-        return writableWorkbook;
-    }
-
-//    public static Uri GetSpreadsheetLocation()
-//    {
-//        return Uri.parse(envPath + "/output.xls");
-//    }
-
-    public boolean WorkbookFileIsDeleted(File file)
-    {
-        boolean fileDeleted = false;
-
-        return fileDeleted = file.delete();
-    }
-
-    public boolean isExternalStorageWritable()
-    {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state))
+        if (workBooksInDirectory.size() != 0)
         {
-            return true;
+            for (String file : workBooksInDirectory)
+            {
+                if (file.endsWith(".xls"))
+                {
+                    File convertToFile = new File(this.directoryName, file);
+                    try
+                    {
+                        Workbook wkbk = getWorkbook(convertToFile);
+                        ArrayList<String> retrieveSheets = new ArrayList<>();
+
+                        for(Sheet sheet : wkbk.getSheets())
+                        {
+                            retrieveSheets.add(sheet.getName());
+                        }
+
+                        sheets.put(convertToFile.getName(), retrieveSheets);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        ex.printStackTrace();
+                    }
+                }
+            }
         }
-        return false;
+        return sheets;
+    }
+
+    public ArrayList<String> getFilesFromDirectory(String directoryName)
+    {
+        ArrayList<String> retrieveFiles = new ArrayList<>();
+
+        File directory = new File(directoryName);
+        if (!directory.exists())
+        {
+           if ( directory.mkdir())
+            {
+                for (File file : directory.listFiles())
+                {
+                    retrieveFiles.add(file.getName());
+                }
+            }
+        }
+
+
+        return retrieveFiles;
+    }
+
+    public WritableWorkbook createWorkbook(File spreadSheetFile) throws IOException, BiffException
+    {
+        return Workbook.createWorkbook(spreadSheetFile);
+    }
+
+    public WritableWorkbook createWorkbook(File spreadSheetFile, Workbook workbook) throws IOException
+    {
+        return Workbook.createWorkbook(spreadSheetFile, workbook);
+    }
+
+    public Workbook getWorkbook(File spreadSheetFile) throws IOException, BiffException
+    {
+        return Workbook.getWorkbook(spreadSheetFile);
     }
 
     public WritableSheet createWorkSheet(WritableWorkbook writableWorkbook, String workSheetName)
@@ -110,45 +116,53 @@ public class ExcelSpreadSheetManager
         return writableWorkbook.createSheet(workSheetName, 0);
     }
 
-    public Sheet getWorkSheet(WritableWorkbook writableWorkbook)
+    public WritableSheet createWorkSheet(WritableWorkbook writableWorkbook, Sheet sheet)
     {
-        Sheet sheet = writableWorkbook.getSheet(0);
+        return writableWorkbook.getSheet(sheet.getName());
+    }
+
+    public WritableSheet addLabelWithCells(WritableSheet sheet, int column, int row, String content) throws jxl.write.WriteException
+    {
+        Label lbl = new Label(column, row, content);
+
+        WritableFont cellFont = new WritableFont(WritableFont.ARIAL, 10);
+
+        WritableCellFormat cellFormat = new WritableCellFormat(cellFont);
+        cellFormat.setAlignment(Alignment.CENTRE);
+
+        sheet.addCell(lbl);
 
         return sheet;
     }
 
-    public void addLabelWithCells(WritableSheet sheet, int column, int row, String content) throws jxl.write.WriteException
+    public void addNumberWithCells(WritableSheet sheet, int column, int row, double totalWorkTime) throws jxl.write.WriteException
     {
-        Label lbl = new Label(column, row, content);
-        sheet.addCell(lbl);
-    }
+        Number number = new Number(column, row, totalWorkTime);
 
-    public void addNumberWithCells(WritableSheet sheet, int column, int row, String content) throws jxl.write.WriteException
-    {
-        Number number = new Number(3, 4, 3.1459);
+        WritableCellFormat cellFormat = new WritableCellFormat(NumberFormats.FLOAT);
+        cellFormat.setAlignment(Alignment.CENTRE);
+
+        number.setCellFormat(cellFormat);
         sheet.addCell(number);
     }
 
-    public void addDateWithCells(WritableSheet sheet, int column, int row, Date date) throws jxl.write.WriteException
+    public WritableSheet addDateTimeWithCells(WritableSheet sheet, int column, int row, Date date, String format) throws jxl.write.WriteException
     {
-
-        DisplayFormat displayFormat = new DateFormat("hh:m a");
+        DisplayFormat displayFormat = new DateFormat(format);
 
         WritableCellFormat dateFormat = new WritableCellFormat(displayFormat);
+        dateFormat.setAlignment(Alignment.CENTRE);
+
         DateTime dateTime = new DateTime(column, row, date, dateFormat);
 
         sheet.addCell(dateTime);
-    }
 
+        return sheet;
+    }
 
     public Cell getCell(Sheet sheet, int column, int row)
     {
         return sheet.getCell(column, row);
-    }
-
-    public String getCellContents(Cell cell)
-    {
-        return cell.getContents();
     }
 
     public void writeCloseWorkBook(WritableWorkbook writableWorkbook) throws jxl.write.WriteException, IOException
@@ -156,6 +170,4 @@ public class ExcelSpreadSheetManager
         writableWorkbook.write();
         writableWorkbook.close();
     }
-
-
 }

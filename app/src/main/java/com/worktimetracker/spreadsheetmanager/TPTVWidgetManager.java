@@ -4,52 +4,46 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.TimePicker;
-
-import com.worktimetracker.R;
 
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 
 /**
- * Created by Patrick Messina on 5/24/2015.
  * Utility class for managing the TimePicker Dialog listeners and TextView disabled states
  */
-
-public class TimeSetListener
+public class TPTVWidgetManager
 {
     private Context context;
 
-    TimePickerDialog timeInDialog, breakInDialog, breakOutDialog, timeOutDialog;
+    private TimePickerDialog timeInDialog, breakInDialog, breakOutDialog, timeOutDialog;
 
-    String[] spreadSheetColumns;
+    private SharedPreferences.Editor editor;
 
-    DateTimeFormatter fmtDate, fmtTime;
+    private String[] spreadSheetColumns;
 
-    DateTime dtToday, dtTimeIn, dtBreakIn, dtBreakOut, dtTimeOut;
+    private DateTimeFormatter fmtDate, fmtTime;
 
-    ImageButton btnSelTimeIn, btnSelBreakIn, btnSelBreakOut, btnSelTimeOut;
+    //private DateTime dtToday, dtTimeIn, dtBreakIn, dtBreakOut, dtTimeOut;
 
-    SharedPreferences.Editor editor;
+    private ImageButton btnSelTimeIn, btnSelBreakIn, btnSelBreakOut, btnSelTimeOut;
 
-    Button btnAddSpreadSheet;
+    private Button btnSubmit;
 
-    EditText etSpreadSheetName, etWorkSheetName;
+    private TextView tvTimeIn, tvBreakIn, tvBreakOut, tvTimeOut;
 
-    TextView tvTimeIn, tvBreakIn, tvBreakOut, tvTimeOut;
-
-    public TimeSetListener(Context context,
-                           TextView tvTimeIn,
-                           TextView tvBreakIn,
-                           TextView tvBreakOut,
-                           TextView tvTimeOut,
-                           ImageButton btnSelTimeIn,
-                           ImageButton btnSelBreakIn,
-                           ImageButton btnSelBreakOut,
-                           ImageButton btnSelTimeOut)
+    public TPTVWidgetManager(Context context,
+                             TextView tvTimeIn,
+                             TextView tvBreakIn,
+                             TextView tvBreakOut,
+                             TextView tvTimeOut,
+                             ImageButton btnSelTimeIn,
+                             ImageButton btnSelBreakIn,
+                             ImageButton btnSelBreakOut,
+                             ImageButton btnSelTimeOut,
+                             Button btnSubmit)
     {
         this.context = context;
         this.tvTimeIn = tvTimeIn;
@@ -62,6 +56,8 @@ public class TimeSetListener
         this.btnSelBreakOut = btnSelBreakOut;
         this.btnSelTimeOut = btnSelTimeOut;
 
+        this.btnSubmit = btnSubmit;
+
         setOnTimeSetListener(tvTimeIn);
         setOnTimeSetListener(tvBreakIn);
         setOnTimeSetListener(tvBreakOut);
@@ -71,9 +67,11 @@ public class TimeSetListener
         breakInDialog = new TimePickerDialog(context, breakInTSListener, DateTime.now().getHourOfDay(), DateTime.now().getMinuteOfHour(), false);
         breakOutDialog = new TimePickerDialog(context, breakOutTSListener, DateTime.now().getHourOfDay(), DateTime.now().getMinuteOfHour(), false);
         timeOutDialog = new TimePickerDialog(context, timeOutTSListener, DateTime.now().getHourOfDay(), DateTime.now().getMinuteOfHour(), false);
+
+        btnSubmit.setEnabled(false);
     }
 
-    public TimePickerDialog.OnTimeSetListener setOnTimeSetListener(final TextView tv)
+    private TimePickerDialog.OnTimeSetListener setOnTimeSetListener(final TextView tv)
     {
         TimePickerDialog.OnTimeSetListener tsListener = new TimePickerDialog.OnTimeSetListener()
         {
@@ -81,21 +79,21 @@ public class TimeSetListener
             {
                 DateTime now = DateTime.now();
                 DateTime dt = new DateTime(now.getYear(), now.getMonthOfYear(), now.getDayOfMonth(), hourOfDay, minute);
-                switch(view.getId())
-                {
-                    case R.id.setTimeIn:
-                        dateTimeToStoredPref(spreadSheetColumns[1], dt);
-                        break;
-                    case R.id.setBreakIn:
-                        dateTimeToStoredPref(spreadSheetColumns[2], dt);
-                        break;
-                    case R.id.setBreakOut:
-                        dateTimeToStoredPref(spreadSheetColumns[3], dt);
-                        break;
-                    case R.id.setTimeOut:
-                        dateTimeToStoredPref(spreadSheetColumns[4], dt);
-                        break;
-                }
+//                switch(view.getId())
+//                {
+//                    case R.id.setTimeIn:
+//                        dateTimeToStoredPref("", dt);
+//                        break;
+//                    case R.id.setBreakIn:
+//                        dateTimeToStoredPref("", dt);
+//                        break;
+//                    case R.id.setBreakOut:
+//                        dateTimeToStoredPref("", dt);
+//                        break;
+//                    case R.id.setTimeOut:
+//                        dateTimeToStoredPref("", dt);
+//                        break;
+//                }
                 tv.setText(fmtTime.print(dt));
             }
         };
@@ -103,7 +101,7 @@ public class TimeSetListener
         return tsListener;
     }
 
-    TimePickerDialog.OnTimeSetListener timeInTSListener = new TimePickerDialog.OnTimeSetListener()
+    private TimePickerDialog.OnTimeSetListener timeInTSListener = new TimePickerDialog.OnTimeSetListener()
     {
         //For all Time Dialog Listeners: Get the current time, store time in new object,
         // store in shared preferences, set TextView to current time
@@ -112,8 +110,8 @@ public class TimeSetListener
         {
             DateTime now = DateTime.now();
             DateTime dt = new DateTime(now.getYear(), now.getMonthOfYear(), now.getDayOfMonth(), hourOfDay, minute, now.getSecondOfMinute());
-            dtTimeIn = dt;
-            dateTimeToStoredPref(spreadSheetColumns[1], dt);
+            //dtTimeIn = dt;
+            //dateTimeToStoredPref(spreadSheetColumns[1], dt);
             tvTimeIn.setText(fmtTime.print(dt));
             setTimeInState();
         }
@@ -125,36 +123,36 @@ public class TimeSetListener
         {
             DateTime now = DateTime.now();
             DateTime dt = new DateTime(now.getYear(), now.getMonthOfYear(), now.getDayOfMonth(), hourOfDay, minute, now.getSecondOfMinute());
-            dtBreakIn = dt;
-            dateTimeToStoredPref(spreadSheetColumns[2], dt);
+            //dtBreakIn = dt;
+            //dateTimeToStoredPref(spreadSheetColumns[2], dt);
             tvBreakIn.setText(fmtTime.print(dt));
             setBreakInState();
         }
     };
 
-    TimePickerDialog.OnTimeSetListener breakOutTSListener = new TimePickerDialog.OnTimeSetListener()
+    private TimePickerDialog.OnTimeSetListener breakOutTSListener = new TimePickerDialog.OnTimeSetListener()
     {
         public void onTimeSet(TimePicker view, int hourOfDay, int minute)
         {
             DateTime now = DateTime.now();
             DateTime dt = new DateTime(now.getYear(), now.getMonthOfYear(), now.getDayOfMonth(), hourOfDay, minute, now.getSecondOfMinute());
-            dtBreakOut = dt;
-            dateTimeToStoredPref(spreadSheetColumns[3], dt);
+            //dtBreakOut = dt;
+            //dateTimeToStoredPref(spreadSheetColumns[3], dt);
             tvBreakOut.setText(fmtTime.print(dt));
             setBreakOutState();
 
         }
     };
 
-    TimePickerDialog.OnTimeSetListener timeOutTSListener  = new TimePickerDialog.OnTimeSetListener()
+    private TimePickerDialog.OnTimeSetListener timeOutTSListener  = new TimePickerDialog.OnTimeSetListener()
     {
 
         public void onTimeSet(TimePicker view, int hourOfDay, int minute)
         {
             DateTime now = DateTime.now();
             DateTime dt = new DateTime(now.getYear(), now.getMonthOfYear(), now.getDayOfMonth(), hourOfDay, minute, now.getSecondOfMinute());
-            dtTimeOut = dt;
-            dateTimeToStoredPref(spreadSheetColumns[4], dt);
+            //dtTimeOut = dt;
+            //dateTimeToStoredPref(spreadSheetColumns[4], dt);
             tvTimeOut.setText(fmtTime.print(dt));
             setTimeOutState();
         }
@@ -180,7 +178,7 @@ public class TimeSetListener
         timeOutDialog.show();
     }
 
-    public void dateTimeToStoredPref(String column, DateTime dt)
+    private void dateTimeToStoredPref(String column, DateTime dt)
     {
         editor.putString(column, dt.toString());
         editor.commit();
@@ -188,14 +186,14 @@ public class TimeSetListener
 
     public void setResetState()
     {
-        dtTimeIn = dtBreakIn = dtBreakOut = dtTimeOut = null;
+        //dtTimeIn = dtBreakIn = dtBreakOut = dtTimeOut = null;
 
         tvTimeIn.setEnabled(true);
         tvBreakIn.setEnabled(false);
         tvBreakOut.setEnabled(false);
         tvTimeOut.setEnabled(false);
 
-        btnAddSpreadSheet.setEnabled(false);
+        //btnAddSpreadSheet.setEnabled(false);
 
         btnSelTimeIn.setEnabled(true);
         btnSelBreakIn.setEnabled(false);
@@ -206,8 +204,8 @@ public class TimeSetListener
         tvBreakIn.setText("");
         tvBreakOut.setText("");
         tvTimeOut.setText("");
-        etSpreadSheetName.setText("");
-        etWorkSheetName.setText("");
+//        etSpreadSheetName.setText("");
+//        etWorkSheetName.setText("");
 
         editor.clear().commit();
 
@@ -224,6 +222,9 @@ public class TimeSetListener
         btnSelBreakIn.setEnabled(true);
         btnSelBreakOut.setEnabled(false);
         btnSelTimeOut.setEnabled(false);
+
+        btnSubmit.setEnabled(false);
+
     }
 
     public void setBreakInState()
@@ -237,6 +238,9 @@ public class TimeSetListener
         btnSelBreakIn.setEnabled(false);
         btnSelBreakOut.setEnabled(true);
         btnSelTimeOut.setEnabled(false);
+
+        btnSubmit.setEnabled(false);
+
     }
 
     public void setBreakOutState()
@@ -250,6 +254,9 @@ public class TimeSetListener
         btnSelBreakIn.setEnabled(false);
         btnSelBreakOut.setEnabled(false);
         btnSelTimeOut.setEnabled(true);
+
+        btnSubmit.setEnabled(false);
+
     }
 
     public void setTimeOutState()
@@ -263,5 +270,8 @@ public class TimeSetListener
         btnSelBreakIn.setEnabled(false);
         btnSelBreakOut.setEnabled(false);
         btnSelTimeOut.setEnabled(false);
+
+        btnSubmit.setEnabled(true);
+
     }
 }

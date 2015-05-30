@@ -10,18 +10,20 @@ import android.widget.TextView;
 
 import com.worktimetracker.R;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jxl.write.WritableSheet;
-
+/**
+ * Class to populate an ExpandableListView with spreadsheet names and the worksheets in them
+ */
 public class ExpandableListAdapter extends BaseExpandableListAdapter 
 {
 	private Context context;
 	private List<String> listDataHeader;
-	private HashMap<String, List<WritableSheet>> listDataChild;
+	private HashMap<String, ArrayList<String>> listDataChild;
 	
-	public ExpandableListAdapter(Context context, List<String> listDataHeader, HashMap<String, List<WritableSheet>> listDataChild)
+	public ExpandableListAdapter(Context context, List<String> listDataHeader, HashMap<String, ArrayList<String>> listDataChild)
 	{
         this.context = context;
         this.listDataHeader = listDataHeader;
@@ -32,7 +34,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 	public Object getChild(int groupPosition, int childPosition) 
 	{
 		String ldh = listDataHeader.get(groupPosition);
-		List<WritableSheet> ldc = listDataChild.get(ldh);
+        ArrayList<String> ldc = listDataChild.get(ldh);
 		
 		return ldc.get(childPosition);
 	}
@@ -46,7 +48,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 	@Override
 	public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) 
 	{
-		WritableSheet childText = (WritableSheet)getChild(groupPosition, childPosition);
+		String childText = (String)getChild(groupPosition, childPosition);
 		
 		if (convertView == null)
 		{
@@ -55,7 +57,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 		}
 		
 		TextView textListChild = (TextView)convertView.findViewById(R.id.tvListItem);
-		textListChild.setText(childText.getName());
+		textListChild.setText(childText);
 			
 		return convertView;
 	}
@@ -63,8 +65,8 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 	@Override
 	public int getChildrenCount(int groupPosition) 
 	{
-		String ldh = listDataHeader.get(groupPosition);
-		List<WritableSheet> ldc = listDataChild.get(ldh);
+        String ldh = listDataHeader.get(groupPosition);
+        ArrayList<String> ldc = listDataChild.get(ldh);
 		
 		return ldc.size();
 	}
@@ -89,7 +91,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter
 
 	@Override
 	public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) 
-	{
+    {
 		String headerTitle = (String) getGroup(groupPosition);
 		
         if (convertView == null) 
