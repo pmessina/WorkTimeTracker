@@ -4,7 +4,7 @@
     <string name="app_name">WorkTimeTracker</string>
     <string name="reset">Reset</string>
     <string name="title_activity_splash_screen">SplashScreenActivity</string>
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_main">Work Time Tracker</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
