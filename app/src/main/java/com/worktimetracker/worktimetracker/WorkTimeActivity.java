@@ -2,6 +2,8 @@ package com.worktimetracker.worktimetracker;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -95,14 +97,28 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
 
         listener = new TPTVWidgetManager(this, tvTimeIn, tvBreakIn, tvBreakOut, tvTimeOut, btnSelTimeIn, btnSelBreakIn, btnSelBreakOut, btnSelTimeOut, btnAddSpreadSheet);
 
-        directoryName = Environment.getExternalStorageDirectory().getAbsolutePath() + "/WorkTimeSpreadsheets/";
+        ContextWrapper wrapper = new ContextWrapper(this);
 
+        directoryName = wrapper.getFilesDir() + "/WorkTimeSpreadsheets/";
+                //file.getAbsolutePath() + "/WorkTimeSpreadsheets/";
         ExcelSpreadSheetManager spreadSheetManager = new ExcelSpreadSheetManager(directoryName);
 
-        //In the future, allow user to change directory name in settings
-        ArrayList<String> retrievedFiles = spreadSheetManager.getFilesFromDirectory(directoryName);
+        //Fetch files from directory name
+        ArrayList<String> retrievedFiles = spreadSheetManager.getFilesFromDirectory();
 
-        HashMap<String, ArrayList<String>> retrievedSheets = spreadSheetManager.fetchSheetsFromDirectory(retrievedFiles);
+        HashMap<String, ArrayList<String>> retrievedSheets = new HashMap<>();
+
+        if (!retrievedSheets.isEmpty())
+        {
+            try
+            {
+                retrievedSheets = spreadSheetManager.fetchSheetsFromDirectory(retrievedFiles);
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
 
         final ExpandableListAdapter listAdapter = new ExpandableListAdapter(this, retrievedFiles, retrievedSheets);
         expListView.setAdapter(listAdapter);
@@ -116,9 +132,9 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
                 String worksheetName = (String)listAdapter.getChild(groupPosition, childPosition);
                 //String worksheetName = sheet.getName();
 
-                etSpreadSheetName.setText(spreadsheetName);
                 etSpreadSheetName.setSelection(etSpreadSheetName.length());
 
+                etSpreadSheetName.setText(spreadsheetName);
                 etWorkSheetName.setText(worksheetName);
                 etWorkSheetName.setSelection(etWorkSheetName.length());
 
@@ -336,7 +352,7 @@ public class WorkTimeActivity extends OrmLiteBaseActivity<DatabaseManager> imple
                         }
                         else
                         {
-                            spreadSheetFile = new File(directoryName, spreadSheetName + ".xls");
+                            spreadSheetFile = new File(directoryName, spreadSheetName);
                             writableWorkbook = esm.createWorkbook(spreadSheetFile);
                             writableSheet = esm.createWorkSheet(writableWorkbook, workSheetName);
                             addSpreadSheetHeader(esm, writableWorkbook, writableSheet);

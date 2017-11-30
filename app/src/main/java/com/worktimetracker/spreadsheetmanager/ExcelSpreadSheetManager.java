@@ -1,5 +1,8 @@
 package com.worktimetracker.spreadsheetmanager;
 
+import android.content.Context;
+import android.util.Log;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,6 +12,7 @@ import java.util.HashMap;
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
+import jxl.WorkbookSettings;
 import jxl.biff.DisplayFormat;
 import jxl.format.Alignment;
 import jxl.read.biff.BiffException;
@@ -30,7 +34,8 @@ public class ExcelSpreadSheetManager
 {
     private String directoryName, spreadSheetName, workSheetName;
 
-    public ExcelSpreadSheetManager(String directoryName, String spreadSheetName, String workSheetName)
+    public ExcelSpreadSheetManager(String directoryName, String spreadSheetName, String
+            workSheetName)
     {
         this.directoryName = directoryName;
         this.spreadSheetName = spreadSheetName;
@@ -42,55 +47,48 @@ public class ExcelSpreadSheetManager
         this.directoryName = directoryName;
     }
 
-    public HashMap<String, ArrayList<String>> fetchSheetsFromDirectory(ArrayList<String> workBooksInDirectory)
+    public HashMap<String, ArrayList<String>> fetchSheetsFromDirectory(ArrayList<String> workBooksInDirectory) throws Exception
     {
         HashMap<String, ArrayList<String>> sheets = new HashMap<>();
 
-        if (workBooksInDirectory.size() != 0)
+        for (String file : workBooksInDirectory)
         {
-            for (String file : workBooksInDirectory)
-            {
+                File convertToFile = new File(this.directoryName, file);
+
                 if (file.endsWith(".xls"))
                 {
-                    File convertToFile = new File(this.directoryName, file);
-                    try
+                    Workbook wkbk = getWorkbook(convertToFile);
+                    ArrayList<String> retrieveSheets = new ArrayList<>();
+
+                    for (Sheet sheet : wkbk.getSheets())
                     {
-                        Workbook wkbk = getWorkbook(convertToFile);
-                        ArrayList<String> retrieveSheets = new ArrayList<>();
-
-                        for(Sheet sheet : wkbk.getSheets())
-                        {
-                            retrieveSheets.add(sheet.getName());
-                        }
-
-                        sheets.put(convertToFile.getName(), retrieveSheets);
-
+                        retrieveSheets.add(sheet.getName());
                     }
-                    catch (Exception ex)
-                    {
-                        ex.printStackTrace();
-                    }
+
+                    sheets.put(convertToFile.getName(), retrieveSheets);
                 }
-            }
         }
+
         return sheets;
     }
 
-    public ArrayList<String> getFilesFromDirectory(String directoryName)
+    public ArrayList<String> getFilesFromDirectory()
     {
         ArrayList<String> retrieveFiles = new ArrayList<>();
 
         File directory = new File(directoryName);
+
         if (!directory.exists())
         {
-           if ( directory.mkdir())
-            {
-                for (File file : directory.listFiles())
-                {
-                    retrieveFiles.add(file.getName());
-                }
-            }
+            directory.mkdir();
         }
+
+        for (File file : directory.listFiles())
+        {
+            retrieveFiles.add(file.getName());
+        }
+
+
 
 
         return retrieveFiles;
@@ -98,10 +96,14 @@ public class ExcelSpreadSheetManager
 
     public WritableWorkbook createWorkbook(File spreadSheetFile) throws IOException, BiffException
     {
-        return Workbook.createWorkbook(spreadSheetFile);
+        WorkbookSettings settings = new WorkbookSettings();
+        settings.setUseTemporaryFileDuringWrite(true);
+
+        return Workbook.createWorkbook(spreadSheetFile, settings);
     }
 
-    public WritableWorkbook createWorkbook(File spreadSheetFile, Workbook workbook) throws IOException
+    public WritableWorkbook createWorkbook(File spreadSheetFile, Workbook workbook) throws
+            IOException
     {
         return Workbook.createWorkbook(spreadSheetFile, workbook);
     }
@@ -121,7 +123,8 @@ public class ExcelSpreadSheetManager
         return writableWorkbook.getSheet(sheet.getName());
     }
 
-    public WritableSheet addLabelWithCells(WritableSheet sheet, int column, int row, String content) throws jxl.write.WriteException
+    public WritableSheet addLabelWithCells(WritableSheet sheet, int column, int row, String
+            content) throws jxl.write.WriteException
     {
         Label lbl = new Label(column, row, content);
 
@@ -135,7 +138,8 @@ public class ExcelSpreadSheetManager
         return sheet;
     }
 
-    public void addNumberWithCells(WritableSheet sheet, int column, int row, double totalWorkTime) throws jxl.write.WriteException
+    public void addNumberWithCells(WritableSheet sheet, int column, int row, double
+            totalWorkTime) throws jxl.write.WriteException
     {
         Number number = new Number(column, row, totalWorkTime);
 
@@ -146,7 +150,8 @@ public class ExcelSpreadSheetManager
         sheet.addCell(number);
     }
 
-    public WritableSheet addDateTimeWithCells(WritableSheet sheet, int column, int row, Date date, String format) throws jxl.write.WriteException
+    public WritableSheet addDateTimeWithCells(WritableSheet sheet, int column, int row, Date
+            date, String format) throws jxl.write.WriteException
     {
         DisplayFormat displayFormat = new DateFormat(format);
 
@@ -165,7 +170,8 @@ public class ExcelSpreadSheetManager
         return sheet.getCell(column, row);
     }
 
-    public void writeCloseWorkBook(WritableWorkbook writableWorkbook) throws jxl.write.WriteException, IOException
+    public void writeCloseWorkBook(WritableWorkbook writableWorkbook) throws jxl.write
+            .WriteException, IOException
     {
         writableWorkbook.write();
         writableWorkbook.close();

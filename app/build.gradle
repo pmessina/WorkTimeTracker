@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion "22.0.1"
+    compileSdkVersion 25
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         applicationId "com.worktimetracker"
         minSdkVersion 14
-        targetSdkVersion 21
+        targetSdkVersion 24
         versionCode 1
         versionName "1.0"
     }
@@ -23,9 +23,10 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:22.1.1'
-    compile project(':ormlite-android-4.49-SNAPSHOT')
-    compile project(':ormlite-core-4.49-SNAPSHOT')
-    compile 'joda-time:joda-time:2.3'
-    compile project(':jxl')
+    compile 'com.android.support:appcompat-v7:25.4.0'
+    compile 'net.sourceforge.jexcelapi:jxl:2.6.12'
+    compile 'com.j256.ormlite:ormlite-core:5.0'
+    compile 'com.j256.ormlite:ormlite-android:5.0'
+    compile 'joda-time:joda-time:2.9.9'
+
 }

@@ -1,1 +1,1 @@
-include ':app', ':ormlite-android-4.49-SNAPSHOT', ':ormlite-core-4.49-SNAPSHOT', ':jxl'
+include ':app'
