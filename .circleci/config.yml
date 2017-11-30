@@ -4,8 +4,15 @@ jobs:
     working_directory: ~/code
     docker:
       - image: circleci/android:api-25-alpha
-    environment:
-      JVM_OPTS: -Xmx3200m
+    machine:
+        java:
+            version: oraclejdk8
+        environment:
+            ANDROID_HOME: /usr/local/android-sdk-linux
+        dependencies:
+            override:
+                - echo y | android update sdk --no-ui --all --filter tools,platform-tools,build-tools-26.0.2,android-25,extra-google-m2repository,extra-google-google_play_services,extra-android-support
+                - ANDROID_HOME=/usr/local/android-sdk-linux ./gradlew dependencies
     steps:
       - checkout
       - restore_cache:
