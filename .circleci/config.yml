@@ -2,19 +2,19 @@ version: 2
 jobs:
   build:
     working_directory: ~/code
+    dependencies:
+        override:
+            - echo y | android update sdk --no-ui --all --filter tools,platform-tools,build-tools-26.0.2,android-25,extra-google-m2repository,extra-google-google_play_services,extra-android-support
+            - chmod +x gradlew
+            - ANDROID_HOME=/usr/local/android-sdk-linux ./gradlew dependencies
     docker:
-      - image: circleci/android:api-25-alpha
+      - image: circleci/android:api-24-alpha
     machine:
         java:
             version: oraclejdk8
         environment:
             ANDROID_HOME: /usr/local/android-sdk-linux
-        dependencies:
-            override:
-                - echo y | android update sdk --no-ui --all --filter tools,platform-tools,build-tools-26.0.2,android-25,extra-google-m2repository,extra-google-google_play_services,extra-android-support
-                - ANDROID_HOME=/usr/local/android-sdk-linux ./gradlew dependencies
     steps:
-      - checkout
       - restore_cache:
           key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
       - run:
